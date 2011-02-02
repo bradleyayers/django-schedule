@@ -95,7 +95,8 @@ class CalendarManager(models.Manager):
             dist_q = Q(calendarrelation__distinction=distinction)
         else:
             dist_q = Q()
-        return self.filter(dist_q, Q(calendarrelation__object_id=obj.id, calendarrelation__content_type=ct))
+        return self.filter(dist_q, Q(calendarrelation__object_id=obj.id,
+                                     calendarrelation__content_type=ct))
 
 class Calendar(models.Model):
     '''
@@ -201,19 +202,19 @@ class CalendarRelationManager(models.Manager):
 class CalendarRelation(models.Model):
     '''
     This is for relating data to a Calendar, and possible all of the events for
-    that calendar, there is also a distinction, so that the same type or kind of
-    data can be related in different ways.  A good example would be, if you have
-    calendars that are only visible by certain users, you could create a
+    that calendar, there is also a distinction, so that the same type or kind
+    of data can be related in different ways. A good example would be, if you
+    have calendars that are only visible by certain users, you could create a
     relation between calendars and users, with the distinction of 'visibility',
-    or 'ownership'.  If inheritable is set to true, all the events for this
+    or 'ownership'. If inheritable is set to true, all the events for this
     calendar will inherit this relation.
 
     calendar: a foreign key relation to a Calendar object.
     content_type: a foreign key relation to ContentType of the generic object
     object_id: the id of the generic object
     content_object: the generic foreign key to the generic object
-    distinction: a string representing a distinction of the relation, User could
-    have a 'veiwer' relation and an 'owner' relation for example.
+    distinction: a string representing a distinction of the relation, User
+    could have a 'viewer' relation and an 'owner' relation for example.
     inheritable: a boolean that decides if events of the calendar should also
     inherit this relation
 
