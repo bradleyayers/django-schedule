@@ -3,7 +3,8 @@ from django.db.models.query import QuerySet
 from django.template.defaultfilters import date
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.utils.dates import WEEKDAYS, WEEKDAYS_ABBR
-from schedule.conf.settings import FIRST_DAY_OF_WEEK, SHOW_CANCELLED_OCCURRENCES
+from schedule.conf.settings import FIRST_DAY_OF_WEEK, \
+    SHOW_CANCELLED_OCCURRENCES
 from schedule.models import Occurrence
 from schedule.utils import OccurrenceReplacer
 
@@ -12,24 +13,23 @@ weekday_abbrs = []
 if FIRST_DAY_OF_WEEK == 1:
     # The calendar week starts on Monday
     for i in range(7):
-        weekday_names.append( WEEKDAYS[i] )
-        weekday_abbrs.append( WEEKDAYS_ABBR[i] )
+        weekday_names.append(WEEKDAYS[i])
+        weekday_abbrs.append(WEEKDAYS_ABBR[i])
 else:
     # The calendar week starts on Sunday, not Monday
-    weekday_names.append( WEEKDAYS[6] )
-    weekday_abbrs.append( WEEKDAYS_ABBR[6] )
+    weekday_names.append(WEEKDAYS[6])
+    weekday_abbrs.append(WEEKDAYS_ABBR[6])
     for i in range(6):
-        weekday_names.append( WEEKDAYS[i] )
-        weekday_abbrs.append( WEEKDAYS_ABBR[i] )
+        weekday_names.append(WEEKDAYS[i])
+        weekday_abbrs.append(WEEKDAYS_ABBR[i])
 
 
 class Period(object):
-    '''
-    This class represents a period of time. It can return a set of occurrences
-    based on its events, and its time period (start and end).
-    '''
-    def __init__(self, events, start, end, parent_persisted_occurrences = None,
-        occurrence_pool=None):
+    """This class represents a period of time. It can return a set of
+    occurrences based on its events, and its time period (start and end).
+    """
+    def __init__(self, events, start, end, parent_persisted_occurrences=None,
+                 occurrence_pool=None):
         self.start = start
         self.end = end
         self.events = events
@@ -38,14 +38,17 @@ class Period(object):
             self._persisted_occurrences = parent_persisted_occurrences
 
     def __eq__(self, period):
-        return self.start==period.start and self.end==period.end and self.events==period.events
+        return (self.start == period.start and self.end == period.end
+                and self.events == period.events)
 
     def __ne__(self, period):
-        return self.start!=period.start or self.end!=period.end or self.events!=period.events
+        return (self.start != period.start or self.end != period.end
+                or self.events != period.events)
 
     def _get_sorted_occurrences(self):
         occurrences = []
-        if hasattr(self, "occurrence_pool") and self.occurrence_pool is not None:
+        if (hasattr(self, 'occurrence_pool')
+            and self.occurrence_pool is not None):
             for occurrence in self.occurrence_pool:
                 if occurrence.start < self.end and occurrence.end > self.start:
                     occurrences.append(occurrence)
@@ -67,17 +70,17 @@ class Period(object):
         if hasattr(self, '_persisted_occurrenes'):
             return self._persisted_occurrences
         else:
-            self._persisted_occurrences = Occurrence.objects.filter(event__in = self.events)
+            self._persisted_occurrences = \
+                Occurrence.objects.filter(event__in=self.events)
             return self._persisted_occurrences
 
     def classify_occurrence(self, occurrence):
-        """
-            returns an integer marker denoting what is the relation of the
-            occurrence to the period:
-            0 - it started in the period and lasted
-            1 - it is fully contained within the period
-            2 - it lasted throughout the period
-            3 - it started before and ended within the period
+        """Return an integer marker denoting what is the relation of the
+        occurrence to the period:
+        0 - it started in the period and lasted
+        1 - it is fully contained within the period
+        2 - it lasted throughout the period
+        3 - it started before and ended within the period
         """
         if occurrence.cancelled and not SHOW_CANCELLED_OCCURRENCES:
             return
@@ -87,7 +90,7 @@ class Period(object):
         ended = False
         if occurrence.start >= self.start and occurrence.start < self.end:
             started = True
-        if occurrence.end >=self.start and occurrence.end< self.end:
+        if occurrence.end >= self.start and occurrence.end < self.end:
             ended = True
         if started and ended:
             return {'occurrence': occurrence, 'class': 1}
@@ -117,14 +120,15 @@ class Period(object):
                 return True
         return False
 
-    def get_time_slot(self, start, end ):
+    def get_time_slot(self, start, end):
         if start >= self.start and end <= self.end:
-            return Period( self.events, start, end )
+            return Period(self.events, start, end)
         return None
 
     def create_sub_period(self, cls, start=None):
         start = start or self.start
-        return cls(self.events, start, self.get_persisted_occurrences(), self.occurrences)
+        return cls(self.events, start, self.get_persisted_occurrences(),
+                   self.occurrences)
 
     def get_periods(self, cls):
         period = self.create_sub_period(cls)
@@ -138,7 +142,8 @@ class Year(Period):
         if date is None:
             date = datetime.datetime.now()
         start, end = self._get_year_range(date)
-        super(Year, self).__init__(events, start, end, parent_persisted_occurrences)
+        super(Year, self).__init__(events, start, end,
+                                   parent_persisted_occurrences)
 
     def get_months(self):
         return self.get_periods(Month)
@@ -148,14 +153,15 @@ class Year(Period):
     next = next_year
 
     def prev_year(self):
-        start = datetime.datetime(self.start.year-1, self.start.month, self.start.day)
+        start = datetime.datetime(self.start.year - 1, self.start.month,
+                                  self.start.day)
         return Year(self.events, start)
     prev = prev_year
 
     def _get_year_range(self, year):
         start = datetime.datetime(year.year, datetime.datetime.min.month,
             datetime.datetime.min.day)
-        end = datetime.datetime(year.year+1, datetime.datetime.min.month,
+        end = datetime.datetime(year.year + 1, datetime.datetime.min.month,
             datetime.datetime.min.day)
         return start, end
 
@@ -163,11 +169,9 @@ class Year(Period):
         return self.start.strftime('%Y')
 
 
-
 class Month(Period):
-    """
-    The month period has functions for retrieving the week periods within this period
-    and day periods within the date.
+    """The month period has functions for retrieving the week periods within
+    this period and day periods within the date.
     """
     def __init__(self, events, date=None, parent_persisted_occurrences=None,
         occurrence_pool=None):
@@ -184,10 +188,10 @@ class Month(Period):
     def get_days(self):
         return self.get_periods(Day)
 
-    def get_day(self, daynumber ):
+    def get_day(self, daynumber):
         date = self.start
         if daynumber > 1:
-            date += datetime.timedelta(days=daynumber-1)
+            date += datetime.timedelta(days=daynumber - 1)
         return self.create_sub_period(Day, date)
 
     def next_month(self):
@@ -203,11 +207,11 @@ class Month(Period):
         return Year(self.events, self.start)
 
     def prev_year(self):
-        start = datetime.datetime.min.replace(year=self.start.year-1)
+        start = datetime.datetime.min.replace(year=self.start.year - 1)
         return Year(self.events, start)
 
     def next_year(self):
-        start = datetime.datetime.min.replace(year=self.start.year+1)
+        start = datetime.datetime.min.replace(year=self.start.year + 1)
         return Year(self.events, start)
 
     def _get_month_range(self, month):
@@ -215,9 +219,9 @@ class Month(Period):
         month = month.month
         start = datetime.datetime.min.replace(year=year, month=month)
         if month == 12:
-            end = start.replace(month=1, year=year+1)
+            end = start.replace(month=1, year=year + 1)
         else:
-            end = start.replace(month=month+1)
+            end = start.replace(month=month + 1)
         return start, end
 
     def __unicode__(self):
@@ -231,8 +235,7 @@ class Month(Period):
 
 
 class Week(Period):
-    """
-    The Week period that has functions for retrieving Day periods within it
+    """The Week period that has functions for retrieving Day periods within it
     """
     def __init__(self, events, date=None, parent_persisted_occurrences=None,
         occurrence_pool=None):

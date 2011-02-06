@@ -11,6 +11,7 @@ import datetime
 from dateutil import rrule
 from schedule.utils import EventListManager
 
+
 class CalendarManager(models.Manager):
     """
     >>> user1 = User(username='tony')
@@ -18,10 +19,10 @@ class CalendarManager(models.Manager):
     """
     def get_calendar_for_object(self, obj, distinction=None):
         """
-        This function gets a calendar for an object.  It should only return one
-        calendar.  If the object has more than one calendar related to it (or
+        This function gets a calendar for an object. It should only return one
+        calendar. If the object has more than one calendar related to it (or
         more than one related to it under a distinction if a distinction is
-        defined) an AssertionError will be raised.  If none are returned it will
+        defined) an AssertionError will be raised. If none are returned it will
         raise a DoesNotExistError.
 
         >>> user = User.objects.get(username='tony')
@@ -43,8 +44,9 @@ class CalendarManager(models.Manager):
         Now if we add one more calendar it should raise an AssertionError
         because there is more than one related to it.
 
-        If you would like to get more than one calendar for an object you should
-        use get_calendars_for_object (see below).
+        If you would like to get more than one calendar for an object you
+        should use get_calendars_for_object (see below).
+
         >>> calendar = Calendar(name='My 2nd Cal')
         >>> calendar.save()
         >>> calendar.create_relation(user)
@@ -57,17 +59,19 @@ class CalendarManager(models.Manager):
         """
         calendar_list = self.get_calendars_for_object(obj, distinction)
         if len(calendar_list) == 0:
-            raise Calendar.DoesNotExist, "Calendar does not exist."
+            raise Calendar.DoesNotExist('Calendar does not exist.')
         elif len(calendar_list) > 1:
-            raise AssertionError, "More than one calendars were found."
+            raise AssertionError('More than one calendars were found.')
         else:
             return calendar_list[0]
 
-    def get_or_create_calendar_for_object(self, obj, distinction = None, name = None):
+    def get_or_create_calendar_for_object(self, obj, distinction=None,
+                                          name=None):
         """
         >>> user = User(username="jeremy")
         >>> user.save()
-        >>> calendar = Calendar.objects.get_or_create_calendar_for_object(user, name = "Jeremy's Calendar")
+        >>> calendar = Calendar.objects.get_or_create_calendar_for_object(
+        ...     user, name = "Jeremy's Calendar")
         >>> calendar.name
         "Jeremy's Calendar"
         """
@@ -75,15 +79,15 @@ class CalendarManager(models.Manager):
             return self.get_calendar_for_object(obj, distinction)
         except Calendar.DoesNotExist:
             if name is None:
-                calendar = Calendar(name = unicode(obj))
+                calendar = Calendar(name=unicode(obj))
             else:
-                calendar = Calendar(name = name)
+                calendar = Calendar(name=name)
             calendar.slug = slugify(calendar.name)
             calendar.save()
             calendar.create_relation(obj, distinction)
             return calendar
 
-    def get_calendars_for_object(self, obj, distinction = None):
+    def get_calendars_for_object(self, obj, distinction=None):
         """
         This function allows you to get calendars for a specific object
 
@@ -97,6 +101,7 @@ class CalendarManager(models.Manager):
             dist_q = Q()
         return self.filter(dist_q, Q(calendarrelation__object_id=obj.id,
                                      calendarrelation__content_type=ct))
+
 
 class Calendar(models.Model):
     '''
@@ -133,8 +138,8 @@ class Calendar(models.Model):
     >>> calendar.events.add(event)
     '''
 
-    name = models.CharField(_("name"), max_length = 200)
-    slug = models.SlugField(_("slug"),max_length = 200)
+    name = models.CharField(_("name"), max_length=200)
+    slug = models.SlugField(_("slug"), max_length=200)
     objects = CalendarManager()
 
     class Meta:
@@ -149,16 +154,17 @@ class Calendar(models.Model):
         return self.event_set.all()
     events = property(events)
 
-    def create_relation(self, obj, distinction = None, inheritable = True):
+    def create_relation(self, obj, distinction=None, inheritable=True):
         """
         Creates a CalendarRelation between self and obj.
 
         if Inheritable is set to true this relation will cascade to all events
         related to this calendar.
         """
-        CalendarRelation.objects.create_relation(self, obj, distinction, inheritable)
+        CalendarRelation.objects.create_relation(self, obj, distinction,
+                                                 inheritable)
 
-    def get_recent(self, amount=5, in_datetime = datetime.datetime.now):
+    def get_recent(self, amount=5, in_datetime=datetime.datetime.now):
         """
         This shortcut function allows you to get events that have started
         recently.
@@ -169,20 +175,22 @@ class Calendar(models.Model):
         in_datetime is the datetime you want to check against.  It defaults to
         datetime.datetime.now
         """
-        return self.events.order_by('-start').filter(start__lt=datetime.datetime.now())[:amount]
+        return self.events.order_by('-start').filter(
+            start__lt=datetime.datetime.now())[:amount]
 
     def occurrences_after(self, date=None):
         return EventListManager(self.events.all()).occurrences_after(date)
 
     def get_absolute_url(self):
-        return reverse('calendar_home', kwargs={'calendar_slug':self.slug})
+        return reverse('calendar_home', kwargs={'calendar_slug': self.slug})
 
     def add_event_url(self):
         return reverse('s_create_event_in_calendar', args=[self.slug])
 
 
 class CalendarRelationManager(models.Manager):
-    def create_relation(self, calendar, content_object, distinction=None, inheritable=True):
+    def create_relation(self, calendar, content_object, distinction=None,
+                        inheritable=True):
         """
         Creates a relation between calendar and content_object.
         See CalendarRelation for help on distinction and inheritable
@@ -190,14 +198,15 @@ class CalendarRelationManager(models.Manager):
         ct = ContentType.objects.get_for_model(type(content_object))
         object_id = content_object.id
         cr = CalendarRelation(
-            content_type = ct,
-            object_id = object_id,
-            calendar = calendar,
-            distinction = distinction,
-            content_object = content_object
+            content_type=ct,
+            object_id=object_id,
+            calendar=calendar,
+            distinction=distinction,
+            content_object=content_object
         )
         cr.save()
         return cr
+
 
 class CalendarRelation(models.Model):
     '''
@@ -226,7 +235,7 @@ class CalendarRelation(models.Model):
     content_type = models.ForeignKey(ContentType)
     object_id = models.IntegerField()
     content_object = generic.GenericForeignKey('content_type', 'object_id')
-    distinction = models.CharField(_("distinction"), max_length = 20, null=True)
+    distinction = models.CharField(_("distinction"), max_length=20, null=True)
     inheritable = models.BooleanField(_("inheritable"), default=True)
 
     objects = CalendarRelationManager()
@@ -237,4 +246,4 @@ class CalendarRelation(models.Model):
         app_label = 'schedule'
 
     def __unicode__(self):
-        return u'%s - %s' %(self.calendar, self.content_object)
+        return u'%s - %s' % (self.calendar, self.content_object)

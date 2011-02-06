@@ -3,15 +3,25 @@ from django.utils.translation import ugettext, ugettext_lazy as _
 
 from dateutil import rrule
 
-RRULE_WEEKDAYS = {"MO":0,"TU":1,"WE":2,"TH":3,"FR":4,"SA":5,"SU":6}
+RRULE_WEEKDAYS = {
+    "MO": 0,
+    "TU": 1,
+    "WE": 2,
+    "TH": 3,
+    "FR": 4,
+    "SA": 5,
+    "SU": 6
+}
 
-freqs = ( ("YEARLY", _("Yearly")),
-            ("MONTHLY", _("Monthly")),
-            ("WEEKLY", _("Weekly")),
-            ("DAILY", _("Daily")),
-            ("HOURLY", _("Hourly")),
-            ("MINUTELY", _("Minutely")),
-            ("SECONDLY", _("Secondly")))
+
+freqs = (("YEARLY", _("Yearly")),
+         ("MONTHLY", _("Monthly")),
+         ("WEEKLY", _("Weekly")),
+         ("DAILY", _("Daily")),
+         ("HOURLY", _("Hourly")),
+         ("MINUTELY", _("Minutely")),
+         ("SECONDLY", _("Secondly")))
+
 
 class Rule(models.Model):
     """
@@ -21,8 +31,8 @@ class Rule(models.Model):
     * name - the human friendly name of this kind of recursion.
     * description - a short description describing this type of recursion.
     * frequency - the base recurrence period
-    * param - extra params required to define this type of recursion. The params
-      should follow this format:
+    * param - extra params required to define this type of recursion. The
+      params should follow this format:
 
         param = [rruleparam:value;]*
         rruleparam = see list below
@@ -88,4 +98,3 @@ class Rule(models.Model):
     def __unicode__(self):
         """Human readable string for Rule"""
         return self.name
-

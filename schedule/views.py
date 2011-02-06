@@ -15,9 +15,10 @@ from schedule.models import *
 from schedule.periods import weekday_names
 from schedule.utils import check_event_permissions, coerce_date_dict
 
-def calendar(request, calendar_slug, template='schedule/calendar.html', extra_context=None):
-    """
-    This view returns a calendar.  This view should be used if you are
+
+def calendar(request, calendar_slug, template='schedule/calendar.html',
+             extra_context=None):
+    """This view returns a calendar.  This view should be used if you are
     interested in the meta data of a calendar, not if you want to display a
     calendar.  It is suggested that you use calendar_by_periods if you would
     like to display a calendar.
@@ -31,7 +32,9 @@ def calendar(request, calendar_slug, template='schedule/calendar.html', extra_co
     calendar = get_object_or_404(Calendar, slug=calendar_slug)
     context = {"calendar": calendar}
     context.update(extra_context)
-    return render_to_response(template, context, context_instance=RequestContext(request))
+    return render_to_response(template, context,
+                              context_instance=RequestContext(request))
+
 
 def calendar_by_periods(request, calendar_slug, periods=None,
     template_name="schedule/calendar_by_period.html", extra_context=None):
@@ -78,20 +81,23 @@ def calendar_by_periods(request, calendar_slug, periods=None,
     else:
         date = datetime.datetime.now()
     event_list = GET_EVENTS_FUNC(request, calendar)
-    period_objects = dict([(period.__name__.lower(), period(event_list, date)) for period in periods])
+    period_objects = dict([(period.__name__.lower(), period(event_list, date))
+                            for period in periods])
     context = {
-            'date': date,
-            'periods': period_objects,
-            'calendar': calendar,
-            'weekday_names': weekday_names,
-            'here':quote(request.get_full_path()),
-        }
+        'date': date,
+        'periods': period_objects,
+        'calendar': calendar,
+        'weekday_names': weekday_names,
+        'here': quote(request.get_full_path()),
+    }
     context.update(extra_context)
-    return render_to_response(template_name, context,context_instance=RequestContext(request),)
+    return render_to_response(template_name, context,
+                              context_instance=RequestContext(request),)
 
-def event(request, event_id, template_name="schedule/event.html", extra_context=None):
-    """
-    This view is for showing an event. It is important to remember that an
+
+def event(request, event_id, template_name='schedule/event.html',
+          extra_context=None):
+    """This view is for showing an event. It is important to remember that an
     event is not an occurrence.  Events define a set of reccurring occurrences.
     If you would like to display an occurrence (a single instance of a
     recurring event) use occurrence.
@@ -112,11 +118,13 @@ def event(request, event_id, template_name="schedule/event.html", extra_context=
     except:
         cal = None
     context = {
-        "event": event,
-        "back_url" : back_url,
+        'event': event,
+        'back_url': back_url,
     }
     context.update(extra_context)
-    return render_to_response(template_name, context, context_instance=RequestContext(request))
+    return render_to_response(template_name, context,
+                              context_instance=RequestContext(request))
+
 
 def occurrence(request, event_id,
     template_name="schedule/occurrence.html", *args, **kwargs):
@@ -137,13 +145,14 @@ def occurrence(request, event_id,
     extra_context = kwargs.get('extra_context', None) or {}
     event, occurrence = get_occurrence(event_id, *args, **kwargs)
     back_url = request.META.get('HTTP_REFERER', None)
-    context =  {
+    context = {
         'event': event,
         'occurrence': occurrence,
         'back_url': back_url,
     }
     context.update(extra_context)
-    return render_to_response(template_name, context, context_instance=RequestContext(request))
+    return render_to_response(template_name, context,
+                              context_instance=RequestContext(request))
 
 
 @check_event_permissions
@@ -163,10 +172,11 @@ def edit_occurrence(request, event_id,
     context = {
         'form': form,
         'occurrence': occurrence,
-        'next':next,
+        'next': next,
     }
     context.update(extra_context)
-    return render_to_response(template_name, context, context_instance=RequestContext(request))
+    return render_to_response(template_name, context,
+                              context_instance=RequestContext(request))
 
 
 @check_event_permissions
@@ -179,14 +189,16 @@ def cancel_occurrence(request, event_id,
     """
     extra_context = kwargs.get('extra_context', None) or {}
     event, occurrence = get_occurrence(event_id, *args, **kwargs)
-    next = kwargs.get('next',None) or get_next_url(request, event.get_absolute_url())
+    next = kwargs.get('next', None) or get_next_url(request,
+                                                    event.get_absolute_url())
     if request.method != "POST":
         context = {
             "occurrence": occurrence,
-            "next":next,
+            "next": next,
         }
         context.update(extra_context)
-        return render_to_response(template_name, context, context_instance=RequestContext(request))
+        return render_to_response(template_name, context,
+                                  context_instance=RequestContext(request))
     occurrence.cancel()
     return HttpResponseRedirect(next)
 
@@ -200,10 +212,10 @@ def get_occurrence(event_id, occurrence_id=None, year=None, month=None,
     retrieve it.  This function returns an event and occurrence regardless of
     which method is used.
     """
-    if(occurrence_id):
+    if occurrence_id:
         occurrence = get_object_or_404(Occurrence, id=occurrence_id)
         event = occurrence.event
-    elif(all((year, month, day, hour, minute, second))):
+    elif all((year, month, day, hour, minute, second)):
         event = get_object_or_404(Event, id=event_id)
         occurrence = event.get_occurrence(
             datetime.datetime(int(year), int(month), int(day), int(hour),
@@ -217,10 +229,10 @@ def get_occurrence(event_id, occurrence_id=None, year=None, month=None,
 
 @check_event_permissions
 def create_or_edit_event(request, calendar_slug, event_id=None, next=None,
-    template_name='schedule/create_event.html', form_class = EventForm, extra_context=None):
-    """
-    This function, if it receives a GET request or if given an invalid form in a
-    POST request it will generate the following response
+                         template_name='schedule/create_event.html',
+                         form_class=EventForm, extra_context=None):
+    """This function, if it receives a GET request or if given an invalid form
+    in a POST request it will generate the following response
 
     Template:
         schedule/create_event.html
@@ -238,9 +250,9 @@ def create_or_edit_event(request, calendar_slug, event_id=None, next=None,
     the date specifed in the GET being the start and 30 minutes from that
     being the end.
 
-    If this form receives an event_id it will edit the event with that id, if it
-    recieves a calendar_id and it is creating a new event it will add that event
-    to the calendar with the id calendar_id
+    If this form receives an event_id it will edit the event with that id, if
+    it recieves a calendar_id and it is creating a new event it will add that
+    event to the calendar with the id calendar_id
 
     If it is given a valid form in a POST request it will redirect with one of
     three options, in this order
@@ -287,17 +299,18 @@ def create_or_edit_event(request, calendar_slug, event_id=None, next=None,
     context = {
         "form": form,
         "calendar": calendar,
-        "next":next
+        "next": next
     }
     context.update(extra_context)
-    return render_to_response(template_name, context, context_instance=RequestContext(request))
+    return render_to_response(template_name, context,
+                              context_instance=RequestContext(request))
 
 
 @check_event_permissions
-def delete_event(request, event_id, next=None, login_required=True, extra_context=None):
-    """
-    After the event is deleted there are three options for redirect, tried in
-    this order:
+def delete_event(request, event_id, next=None, login_required=True,
+                 extra_context=None):
+    """After the event is deleted there are three options for redirect, tried
+    in this order:
 
     # Try to find a 'next' GET variable
     # If the key word argument redirect is set
@@ -309,13 +322,14 @@ def delete_event(request, event_id, next=None, login_required=True, extra_contex
     next = get_next_url(request, next)
     extra_context['next'] = next
     return delete_object(request,
-                         model = Event,
-                         object_id = event_id,
-                         post_delete_redirect = next,
-                         template_name = "schedule/delete_event.html",
-                         extra_context = extra_context,
-                         login_required = login_required
+                         model=Event,
+                         object_id=event_id,
+                         post_delete_redirect=next,
+                         template_name='schedule/delete_event.html',
+                         extra_context=extra_context,
+                         login_required=login_required
                         )
+
 
 def check_next_url(next):
     """
@@ -326,10 +340,12 @@ def check_next_url(next):
         return None
     return next
 
+
 def get_next_url(request, default):
     next = default
     if OCCURRENCE_CANCEL_REDIRECT:
         next = OCCURRENCE_CANCEL_REDIRECT
-    if 'next' in request.REQUEST and check_next_url(request.REQUEST['next']) is not None:
+    if ('next' in request.REQUEST
+        and check_next_url(request.REQUEST['next']) is not None):
         next = request.REQUEST['next']
     return next
